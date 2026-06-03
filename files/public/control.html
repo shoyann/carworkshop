@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>车机创意工坊</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Noto+Sans+SC:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --border: rgba(255,255,255,0.07);
+    --accent: #e8ff47;
+    --accent2: #7b5ea7;
+    --text: #f0f0f0;
+    --muted: rgba(240,240,240,0.45);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans SC', sans-serif;
+    min-height: 100vh;
+    padding: 24px 20px 48px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 36px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--accent); }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 5px 12px;
+  }
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #666;
+    transition: background 0.3s;
+  }
+  .status-dot.online { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+
+  h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .style-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+
+  .style-btn {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    overflow: hidden;
+  }
+  .style-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+    border-radius: 14px;
+  }
+  .style-btn:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-1px); }
+  .style-btn:hover::before { opacity: 1; }
+  .style-btn.selected {
+    border-color: var(--accent);
+    background: rgba(232,255,71,0.06);
+  }
+  .style-btn.selected .style-check { opacity: 1; }
+
+  .style-btn[data-style="cyber"]::before { background: radial-gradient(circle at 0% 100%, rgba(0,255,200,0.08), transparent 60%); }
+  .style-btn[data-style="nature"]::before { background: radial-gradient(circle at 0% 100%, rgba(74,222,128,0.08), transparent 60%); }
+  .style-btn[data-style="retro"]::before { background: radial-gradient(circle at 0% 100%, rgba(251,146,60,0.08), transparent 60%); }
+  .style-btn[data-style="minimal"]::before { background: radial-gradient(circle at 0% 100%, rgba(148,163,184,0.08), transparent 60%); }
+  .style-btn[data-style="space"]::before { background: radial-gradient(circle at 0% 100%, rgba(139,92,246,0.08), transparent 60%); }
+  .style-btn[data-style="storm"]::before { background: radial-gradient(circle at 0% 100%, rgba(96,165,250,0.08), transparent 60%); }
+
+  .style-emoji { font-size: 28px; display: block; margin-bottom: 10px; }
+  .style-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 3px;
+  }
+  .style-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
+  .style-check {
+    position: absolute;
+    top: 10px; right: 10px;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+    font-size: 10px;
+    color: #000;
+  }
+
+  .light-section { margin-bottom: 32px; }
+  .light-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .light-btn {
+    border-radius: 10px;
+    padding: 12px 8px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    text-align: center;
+    font-size: 11px;
+    font-family: 'Noto Sans SC', sans-serif;
+    transition: all 0.2s;
+    background: var(--surface);
+    color: var(--muted);
+  }
+  .light-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+  .light-btn.selected { color: var(--text); border-width: 1.5px; }
+  .light-swatch { width: 24px; height: 24px; border-radius: 50%; margin: 0 auto 6px; }
+
+  .generate-btn {
+    width: 100%;
+    padding: 18px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .generate-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+  .generate-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .generate-btn .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  .generate-btn.loading .spinner { display: block; }
+  .generate-btn.loading .btn-text { display: none; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .preview-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .preview-section.visible { display: block; }
+  .preview-video {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    display: block;
+    background: #000;
+  }
+  .preview-meta {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .preview-label { font-size: 13px; color: var(--muted); }
+  .preview-badge {
+    font-size: 11px;
+    background: rgba(232,255,71,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(232,255,71,0.2);
+    border-radius: 100px;
+    padding: 3px 10px;
+  }
+
+  .push-btn {
+    width: 100%;
+    padding: 18px;
+    background: transparent;
+    color: var(--text);
+    border: 1.5px solid var(--accent);
+    border-radius: 14px;
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 12px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .push-btn.visible { display: flex; }
+  .push-btn:hover { background: rgba(232,255,71,0.06); }
+  .push-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 13px;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 100;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: rgba(74,222,128,0.3); color: #4ade80; }
+  .toast.error { border-color: rgba(248,113,113,0.3); color: #f87171; }
+
+  .api-note {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.6;
+    margin-top: 20px;
+    padding: 14px;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+  }
+  .api-note a { color: var(--accent); text-decoration: none; }
+
+  .keling-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 13px;
+    margin-bottom: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .keling-input:focus { border-color: rgba(232,255,71,0.4); }
+  .keling-input::placeholder { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Car<span>Workshop</span></div>
+  <div class="status-pill">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">检测中</span>
+  </div>
+</header>
+
+<h2>选择风格</h2>
+<div class="style-grid">
+  <button class="style-btn" data-style="cyber" data-prompt="赛博朋克城市夜景，霓虹灯光，雨中反光，未来感，汽车启动动画，电影级质感">
+    <span class="style-emoji">⚡</span>
+    <span class="style-name">赛博朋克</span>
+    <span class="style-desc">霓虹 · 雨夜 · 未来都市</span>
+    <div class="style-check">✓</div>
+  </button>
+  <button class="style-btn" data-style="nature" data-prompt="极光下的森林，晨雾，自然光影变幻，治愈系，车窗外风景，4K超清">
+    <span class="style-emoji">🌿</span>
+    <span class="style-name">自然极光</span>
+    <span class="style-desc">森林 · 极光 · 治愈</span>
+    <div class="style-check">✓</div>
+  </button>
+  <button class="style-btn" data-style="retro" data-prompt="复古日本城市，80年代感，拱廊霓虹，VHS质感，洛菲美学，暖色调">
+    <span class="style-emoji">🎮</span>
+    <span class="style-name">复古日系</span>
+    <span class="style-desc">80年代 · 暖色 · 像素</span>
+    <div class="style-check">✓</div>
+  </button>
+  <button class="style-btn" data-style="minimal" data-prompt="极简主义，黑白线条，几何图形流动，包豪斯风格，优雅，呼吸感">
+    <span class="style-emoji">◼</span>
+    <span class="style-name">极简几何</span>
+    <span class="style-desc">线条 · 包豪斯 · 留白</span>
+    <div class="style-check">✓</div>
+  </button>
+  <button class="style-btn" data-style="space" data-prompt="深空星云，星系旋转，宇宙尘埃，紫色星云，科幻感，史诗级视觉">
+    <span class="style-emoji">🌌</span>
+    <span class="style-name">深空星云</span>
+    <span class="style-desc">星系 · 宇宙 · 史诗</span>
+    <div class="style-check">✓</div>
+  </button>
+  <button class="style-btn" data-style="storm" data-prompt="海上风暴，闪电，翻涌巨浪，力量感，自然震撼，电影色调">
+    <span class="style-emoji">⛈️</span>
+    <span class="style-name">海上风暴</span>
+    <span class="style-desc">闪电 · 巨浪 · 震撼</span>
+    <div class="style-check">✓</div>
+  </button>
+</div>
+
+<div class="light-section">
+  <h2>氛围灯颜色</h2>
+  <div class="light-grid">
+    <button class="light-btn selected" data-color="#00ffcc" data-name="冰川">
+      <div class="light-swatch" style="background:#00ffcc"></div>冰川
+    </button>
+    <button class="light-btn" data-color="#ff3366" data-name="烈焰">
+      <div class="light-swatch" style="background:#ff3366"></div>烈焰
+    </button>
+    <button class="light-btn" data-color="#7b5ea7" data-name="星夜">
+      <div class="light-swatch" style="background:#7b5ea7"></div>星夜
+    </button>
+    <button class="light-btn" data-color="#ff9500" data-name="日落">
+      <div class="light-swatch" style="background:#ff9500"></div>日落
+    </button>
+    <button class="light-btn" data-color="#4ade80" data-name="森林">
+      <div class="light-swatch" style="background:#4ade80"></div>森林
+    </button>
+    <button class="light-btn" data-color="#60a5fa" data-name="极光">
+      <div class="light-swatch" style="background:#60a5fa"></div>极光
+    </button>
+    <button class="light-btn" data-color="#ffffff" data-name="月光">
+      <div class="light-swatch" style="background:#fff;border:1px solid rgba(255,255,255,0.2)"></div>月光
+    </button>
+    <button class="light-btn" data-color="#ff007a" data-name="霓虹">
+      <div class="light-swatch" style="background:#ff007a"></div>霓虹
+    </button>
+  </div>
+</div>
+
+<input class="keling-input" id="kelingKey" type="password" placeholder="可灵 API Key（选填，没有则用模拟视频演示）">
+
+<button class="generate-btn" id="generateBtn">
+  <div class="spinner"></div>
+  <span class="btn-text">✦ 生成开机动画</span>
+</button>
+
+<div class="preview-section" id="previewSection">
+  <video class="preview-video" id="previewVideo" autoplay loop muted playsinline></video>
+  <div class="preview-meta">
+    <span class="preview-label" id="previewLabel">正在生成...</span>
+    <span class="preview-badge">预览</span>
+  </div>
+</div>
+
+<button class="push-btn" id="pushBtn">
+  ↗ 发送到车内
+</button>
+
+<p class="api-note">
+  没有可灵 API Key？<a href="https://klingai.com" target="_blank">去申请</a> · 或直接体验模拟模式<br>
+  平板打开 <strong>tablet.html</strong> 即可接收推送
+</p>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const SERVER = window.location.origin;
+  let selectedStyle = null;
+  let selectedColor = '#00ffcc';
+  let generatedVideoUrl = null;
+
+  // Status check
+  async function checkStatus() {
+    try {
+      const r = await fetch(`${SERVER}/api/status`);
+      const d = await r.json();
+      document.getElementById('statusDot').className = 'status-dot online';
+      document.getElementById('statusText').textContent = `${d.tablets} 台平板在线`;
+    } catch {
+      document.getElementById('statusText').textContent = '服务器离线';
+    }
+  }
+  checkStatus();
+  setInterval(checkStatus, 4000);
+
+  // Style selection
+  document.querySelectorAll('.style-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedStyle = { style: btn.dataset.style, prompt: btn.dataset.prompt };
+    });
+  });
+
+  // Light selection
+  document.querySelectorAll('.light-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.light-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedColor = btn.dataset.color;
+      const name = btn.dataset.name;
+      btn.style.borderColor = selectedColor;
+    });
+  });
+
+  // Generate
+  document.getElementById('generateBtn').addEventListener('click', async () => {
+    if (!selectedStyle) { showToast('请先选择一个风格', 'error'); return; }
+
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    btn.classList.add('loading');
+
+    const apiKey = document.getElementById('kelingKey').value.trim();
+
+    try {
+      let videoUrl;
+
+      if (apiKey) {
+        // Real Keling API call
+        videoUrl = await callKelingAPI(apiKey, selectedStyle.prompt);
+      } else {
+        // Demo mode: use a sample video based on style
+        await new Promise(r => setTimeout(r, 2000)); // simulate wait
+        videoUrl = getDemoVideo(selectedStyle.style);
+      }
+
+      generatedVideoUrl = videoUrl;
+      document.getElementById('previewVideo').src = videoUrl;
+      document.getElementById('previewLabel').textContent =
+        `${selectedStyle.style} · 氛围灯 ${document.querySelector('.light-btn.selected').dataset.name}`;
+      document.getElementById('previewSection').classList.add('visible');
+      document.getElementById('pushBtn').classList.add('visible');
+      showToast('生成完成！可以发送到车内了', 'success');
+    } catch (e) {
+      showToast('生成失败：' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+    }
+  });
+
+  async function callKelingAPI(apiKey, prompt) {
+    // Step 1: Submit task
+    const submitRes = await fetch('https://api.klingai.com/v1/videos/text2video', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model_name: 'kling-v1',
+        prompt: prompt + '，竖屏，10秒，适合车载开机动画，电影级',
+        duration: '5',
+        aspect_ratio: '16:9',
+        mode: 'std'
+      })
+    });
+    const submitData = await submitRes.json();
+    if (!submitData.data?.task_id) throw new Error('提交失败，检查 API Key');
+
+    const taskId = submitData.data.task_id;
+
+    // Step 2: Poll for result
+    for (let i = 0; i < 60; i++) {
+      await new Promise(r => setTimeout(r, 5000));
+      const pollRes = await fetch(`https://api.klingai.com/v1/videos/text2video/${taskId}`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      });
+      const pollData = await pollRes.json();
+      const status = pollData.data?.task_status;
+      if (status === 'succeed') {
+        return pollData.data.task_result.videos[0].url;
+      }
+      if (status === 'failed') throw new Error('可灵生成失败');
+    }
+    throw new Error('生成超时');
+  }
+
+  function getDemoVideo(style) {
+    // Demo videos from public sources matching each style
+    const demos = {
+      cyber:   'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+      nature:  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+      retro:   'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      minimal: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
+      space:   'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+      storm:   'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+    };
+    return demos[style] || demos.cyber;
+  }
+
+  // Push to car
+  document.getElementById('pushBtn').addEventListener('click', async () => {
+    if (!generatedVideoUrl) return;
+    const btn = document.getElementById('pushBtn');
+    btn.disabled = true;
+    btn.textContent = '发送中...';
+
+    try {
+      const res = await fetch(`${SERVER}/api/push`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          videoUrl: generatedVideoUrl,
+          theme: selectedStyle.style,
+          lights: { color: selectedColor, brightness: 0.8 }
+        })
+      });
+      const data = await res.json();
+      if (data.tabletCount > 0) {
+        showToast(`已发送到 ${data.tabletCount} 台车内设备`, 'success');
+      } else {
+        showToast('没有平板在线，请先在平板打开 tablet.html', 'error');
+      }
+    } catch {
+      showToast('发送失败，检查服务器连接', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '↗ 发送到车内';
+    }
+  });
+
+  function showToast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+</script>
+</body>
+</html>

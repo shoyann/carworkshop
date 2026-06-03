@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Car Workshop · 车内显示</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: #000;
+    overflow: hidden;
+    font-family: 'Syne', sans-serif;
+  }
+
+  #video-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+  }
+
+  #video-layer video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Standby screen */
+  #standby {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.8s ease;
+  }
+  #standby.hidden { opacity: 0; pointer-events: none; }
+
+  .standby-logo {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 12px;
+    color: #fff;
+  }
+  .standby-logo span { color: #e8ff47; }
+
+  .standby-sub {
+    font-size: 13px;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 48px;
+  }
+
+  .waiting-indicator {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .waiting-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  .waiting-dot:nth-child(2) { animation-delay: 0.2s; }
+  .waiting-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes pulse {
+    0%, 80%, 100% { transform: scale(1); background: rgba(255,255,255,0.2); }
+    40% { transform: scale(1.4); background: #e8ff47; }
+  }
+
+  /* Overlay info during playback */
+  #now-playing {
+    position: fixed;
+    bottom: 32px;
+    left: 32px;
+    z-index: 10;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.6s ease;
+  }
+  #now-playing.show { opacity: 1; transform: translateY(0); }
+  #now-playing.hide { opacity: 0; }
+
+  .np-label {
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .np-theme {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.8);
+  }
+
+  /* Light preview dot */
+  #light-dot {
+    position: fixed;
+    top: 32px;
+    right: 32px;
+    z-index: 10;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #00ffcc;
+    box-shadow: 0 0 20px currentColor;
+    transition: background 1s, box-shadow 1s;
+    opacity: 0;
+  }
+  #light-dot.show { opacity: 1; }
+
+  /* Connection status */
+  #conn-status {
+    position: fixed;
+    top: 28px;
+    left: 28px;
+    z-index: 10;
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .conn-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: #666;
+    transition: background 0.3s;
+  }
+  .conn-dot.connected { background: #4ade80; }
+
+  /* Transition overlay */
+  #transition {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s;
+  }
+  #transition.flash { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="standby">
+  <div class="standby-logo">Car<span>Workshop</span></div>
+  <div class="standby-sub">等待推送</div>
+  <div class="waiting-indicator">
+    <div class="waiting-dot"></div>
+    <div class="waiting-dot"></div>
+    <div class="waiting-dot"></div>
+  </div>
+</div>
+
+<div id="video-layer">
+  <video id="mainVideo" autoplay loop muted playsinline></video>
+</div>
+
+<div id="conn-status">
+  <div class="conn-dot" id="connDot"></div>
+  <span id="connText">连接中</span>
+</div>
+
+<div id="light-dot"></div>
+
+<div id="now-playing">
+  <div class="np-label">正在播放</div>
+  <div class="np-theme" id="npTheme">—</div>
+</div>
+
+<div id="transition"></div>
+
+<script>
+  const video = document.getElementById('mainVideo');
+  const standby = document.getElementById('standby');
+  const connDot = document.getElementById('connDot');
+  const connText = document.getElementById('connText');
+  const nowPlaying = document.getElementById('now-playing');
+  const npTheme = document.getElementById('npTheme');
+  const lightDot = document.getElementById('light-dot');
+  const transition = document.getElementById('transition');
+
+  const themeNames = {
+    cyber: '赛博朋克',
+    nature: '自然极光',
+    retro: '复古日系',
+    minimal: '极简几何',
+    space: '深空星云',
+    storm: '海上风暴'
+  };
+
+  function connect() {
+    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${location.host}/tablet`);
+
+    ws.onopen = () => {
+      connDot.className = 'conn-dot connected';
+      connText.textContent = '已连接';
+    };
+
+    ws.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'play') {
+        playTheme(msg);
+      }
+    };
+
+    ws.onclose = () => {
+      connDot.className = 'conn-dot';
+      connText.textContent = '重连中...';
+      setTimeout(connect, 2000);
+    };
+
+    ws.onerror = () => ws.close();
+  }
+
+  function playTheme(msg) {
+    // Flash transition
+    transition.classList.add('flash');
+
+    setTimeout(() => {
+      // Set video
+      video.src = msg.videoUrl;
+      video.load();
+      video.play().catch(() => {});
+
+      // Hide standby
+      standby.classList.add('hidden');
+
+      // Update light dot color
+      if (msg.lights?.color) {
+        lightDot.style.background = msg.lights.color;
+        lightDot.style.boxShadow = `0 0 24px ${msg.lights.color}, 0 0 48px ${msg.lights.color}40`;
+        lightDot.classList.add('show');
+      }
+
+      // Show now playing
+      const name = themeNames[msg.theme] || msg.theme;
+      npTheme.textContent = name;
+      nowPlaying.classList.add('show');
+      setTimeout(() => nowPlaying.classList.add('hide'), 4000);
+      setTimeout(() => { nowPlaying.classList.remove('show', 'hide'); }, 4800);
+
+      // Remove flash
+      transition.classList.remove('flash');
+    }, 400);
+  }
+
+  connect();
+
+  // Keep screen on (where supported)
+  if ('wakeLock' in navigator) {
+    navigator.wakeLock.request('screen').catch(() => {});
+  }
+</script>
+</body>
+</html>
